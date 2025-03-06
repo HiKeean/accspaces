@@ -1,29 +1,20 @@
 import { PrismaClient } from "@prisma/client"
-import fs from "fs"
-import path from "path"
 
-let sslCertPath: string | undefined = undefined
+let sslCert: string | undefined = undefined
 
+// Langsung ambil CA_CERT dari environment variable
 if (process.env.CA_CERT) {
-  const tempDir = path.join(process.cwd(), "tmp")
-
-  if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir, { recursive: true })
-  }
-
-  sslCertPath = path.join(tempDir, "ca-cert.pem")
-
-  fs.writeFileSync(sslCertPath, process.env.CA_CERT)
-  fs.chmodSync(sslCertPath, 0o600)
+  sslCert = process.env.CA_CERT
 }
 
 let databaseUrl = process.env.DATABASE_URL || ""
 
-if (sslCertPath) {
+if (sslCert) {
   if (!databaseUrl.includes("sslrootcert=")) {
+    // Menambahkan sslrootcert dengan nilai CA_CERT langsung
     databaseUrl += databaseUrl.includes("?")
-      ? `&sslmode=verify-full&sslrootcert=${sslCertPath}`
-      : `?sslmode=verify-full&sslrootcert=${sslCertPath}`
+      ? `&sslmode=verify-full&sslrootcert=${sslCert}`
+      : `?sslmode=verify-full&sslrootcert=${sslCert}`
   }
 }
 
